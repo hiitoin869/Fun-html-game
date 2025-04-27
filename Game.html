@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Catch the Falling Stars</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(#001f3f, #0074D9);
+    }
+    #gameCanvas {
+      display: block;
+      margin: 0 auto;
+      background: #111;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let basket = {
+  x: canvas.width / 2 - 30,
+  y: canvas.height - 40,
+  width: 60,
+  height: 20,
+  speed: 7
+};
+
+let stars = [];
+let score = 0;
+let missed = 0;
+let maxMissed = 5;
+
+document.addEventListener("keydown", moveBasket);
+
+function moveBasket(e) {
+  if (e.key === "ArrowLeft" && basket.x > 0) {
+    basket.x -= basket.speed * 5;
+  } else if (e.key === "ArrowRight" && basket.x + basket.width < canvas.width) {
+    basket.x += basket.speed * 5;
+  }
+}
+
+function createStar() {
+  let baseSpeed = 1 + Math.random() * 2;
+  baseSpeed += score * 0.05; // Faster as you score more
+  
+  // Random chance for a golden star (10% chance)
+  let isGolden = Math.random() < 0.1;
+
+  stars.push({
+    x: Math.random() * (canvas.width - 20),
+    y: -20,
+    size: 20,
+    speed: baseSpeed,
+    golden: isGolden
+  });
+}
+
+function drawBasket() {
+  ctx.fillStyle = "#FFD700";
+  ctx.fillRect(basket.x, basket.y, basket.width, basket.height);
+}
+
+function drawStar(star) {
+  ctx.fillStyle = star.golden ? "#FFDF00" : "#00FFFF"; // Gold for golden stars
+  ctx.beginPath();
+  ctx.arc(star.x, star.y, star.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawScore() {
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "20px Arial";
+  ctx.fillText(`Score: ${score}`, 10, 30);
+  ctx.fillText(`Missed: ${missed}/${maxMissed}`, 10, 60);
+}
+
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawBasket();
+  drawScore();
+
+  stars.forEach((star, index) => {
+    star.y += star.speed;
+    drawStar(star);
+
+    // Check for catch
+    if (
+      star.y + star.size / 2 >= basket.y &&
+      star.x >= basket.x &&
+      star.x <= basket.x + basket.width
+    ) {
+      if (star.golden) {
+        score += 2; // Golden stars give 2 points
+      } else {
+        score += 1;
+      }
+      stars.splice(index, 1);
+    } 
+    // Missed star
+    else if (star.y > canvas.height) {
+      missed++;
+      stars.splice(index, 1);
+      if (missed >= maxMissed) {
+        alert("Game Over! Your Score: " + score);
+        document.location.reload();
+      }
+    }
+  });
+
+  requestAnimationFrame(update);
+}
+
+// Create stars every 800ms
+setInterval(createStar, 800);
+
+// Start the game loop
+update();
+</script>
+</body>
+</html>
